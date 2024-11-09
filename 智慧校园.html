@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加载高德地图</title>
+    <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css"/>
+    <!-- 1. 新建容器，存放地图 -->
+     <style>
+        html,
+        body,
+        #container{
+            width: 100%;
+            height: 100%;
+        }
+        .input-card .btn{
+            margin-right: 1.2rem;
+            width: 9rem;
+        }
+
+        .input-card .btn:last-child{
+            margin-right: 0;
+        }
+     </style>
+     <!-- 2. 添加高德API资源 -->
+     <script type="text/javascript">
+        window._AMapSecurityConfig = {
+          securityJsCode: "df7a231be8e42e40ee1f9bec33273502",
+        };
+      </script>
+      <script src="https://webapi.amap.com/maps?v=2.0&key=2be4fe460aaf1687bafb991b62eed112&plugin=Amap.Driving"></script>
+</head>
+<body>
+<div id="container"></div>
+<div class="input-card">
+    <h4>轨迹回放控制</h4>
+    <div class="input-item">
+      <button class="btn" onclick="startAnimation()">开始动画</button>
+      <input type="button" class="btn" value="暂停动画" id="pause" onclick="pauseAnimation()"/>
+    </div>
+    <div class="input-item">
+        <input type="button" class="btn" value="继续动画" id="resume" onclick="resumeAnimation()"/>
+        <input type="button" class="btn" value="停止动画" id="stop" onclick="stopAnimation()"/>
+    </div>
+</div>
+<script>
+    //加载地图
+var map=new AMap.Map('container',{
+  resizeEnable:true,
+  zoom:17,
+    center:[102.758667,25.059224],
+    viewMode:"3D",
+})
+//加载控件
+AMap.plugin(["AMap.ToolBar",
+    "AMap.Scale",
+    "AMap.HawkEye",
+    "AMap.MapType",
+    "AMap.Geolocation",
+    "AMap.ControlBar",
+],function(){
+    map.addControl(new AMap.ToolBar());
+    map.addControl(new AMap.Scale());
+
+    //添加鹰眼控件，在地图右下角显示地图的缩略图
+   // map.addControl(new AMap.HawkEye({ isOpen: true }));
+
+    //添加类别切换控件，实现默认图层与卫星图、实施交通图层之间切换的控制
+    map.addControl(new AMap.MapType());
+
+    //添加定位控件，用来获取和展示用户主机所在的经纬度位置
+    map.addControl(new AMap.Geolocation());
+
+    //添加控制罗盘控件，用来控制地图的旋转和倾斜
+    map.addControl(new AMap.ControlBar());
+
+});
+var startIcon = new AMap.Icon({
+        // 图标的取图地址
+      icon: ''//a.amap.com/jsapi_demos/static/demo-center/icons/poi-marker.png'',
+        // 图标所用图片大小
+        //imageSize: new AMap.Size(50,40),
+        // 图标取图偏移量
+        //imageOffset: new AMap.Pixel(-9, -3)
+    });
+    var pi=[
+    "<img src='https://whw-tyx.github.io/test1/2.jpg' width='40px';height='50px'>",
+    "<img src='https://whw-tyx.github.io/test1/1.jpg' width='40px';height='50px'>",
+    "<img src='https://whw-tyx.github.io/test1/4.jpg' width='40px';height='50px'>",
+    "<img src='https://whw-tyx.github.io/test1/7.jpg' width='40px';height='50px'>",
+    "<img src='https://whw-tyx.github.io/test1/5.jpg' width='40px';height='50px'>",
+    "<img src='https://whw-tyx.github.io/test1/6.jpg' width='40px';height='50px'>",
+    "<img src='https://whw-tyx.github.io/test1/3.jpg' width='40px';height='50px'>",
+    "<img src='https://whw-tyx.github.io/test1/8.jpg' width='40px';height='50px'>",
+    "<img src='https://whw-tyx.github.io/test1/9.jpg' width='50px';height='50px'>",
+    ];
+    var positions=[
+      [102.758126,25.062632],
+      [102.756912,25.062375],
+      [102.75778,25.062021],
+      [102.759141,25.061703],
+      [102.756871,25.061563],
+      [102.757899,25.061485],
+      [102.758702,25.060291],
+      [102.757478,25.056984],
+      [102.755832,25.057221],
+    ];
+    var infoWindow = new AMap.InfoWindow({offset: new AMap.Pixel(0, -30)});
+    for (var i = 0, marker; i < positions.length; i++) {
+        var marker = new AMap.Marker({
+            position: positions[i],
+            icon:startIcon,
+            map: map
+        });
+        marker.content = pi[i];
+        marker.on('click', markerClick);
+        marker.emit('click', {target: marker});
+    }
+    function markerClick(e) {
+        infoWindow.setContent(e.target.content);
+        infoWindow.open(map, e.target.getPosition());
+    }
+    map.setFitView();
+var text=new AMap.Text({
+position: new AMap.LngLat(102.758667,25.059424),
+anchor:'top',
+text:'北京',
+Image:'./2.png',
+style:{'background-color':'red'},
+});
+//map.add(text);
+    // JSAPI2.0 使用覆盖物动画必须先加载动画插件
+    AMap.plugin('AMap.MoveAnimation', function(){
+        var marker, lineArr = [[102.758644,25.06157],[102.758835,25.061456],[102.759583,25.06113],[102.760184,25.060816],
+        [102.760233,25.060619],[102.760226,25.05968],[102.759518,25.0597],[102.759444,25.059238]]
+        
+        marker = new AMap.Marker({
+            map: map,
+            position: [102.758644,25.06157],
+            icon: "https://a.amap.com/jsapi_demos/static/demo-center-v2/car.png",
+            offset: new AMap.Pixel(-13, -26),
+        });
+
+        // 绘制轨迹
+        var polyline = new AMap.Polyline({
+            map: map,
+            path: lineArr,
+            showDir:true,
+            strokeColor: "#28F",  //线颜色
+            // strokeOpacity: 1,     //线透明度
+            strokeWeight: 6,      //线宽
+            // strokeStyle: "solid"  //线样式
+        });
+
+        var passedPolyline = new AMap.Polyline({
+            map: map,
+            strokeColor: "#AF5",  //线颜色
+            strokeWeight: 6,      //线宽
+        });
+
+
+        marker.on('moving', function (e) {
+            passedPolyline.setPath(e.passedPath);
+            map.setCenter(e.target.getPosition(),true)
+        });
+
+        map.setFitView();
+
+        window.startAnimation = function startAnimation () {
+            marker.moveAlong(lineArr, {
+                // 每一段的时长
+                duration: 500,//可根据实际采集时间间隔设置
+                // JSAPI2.0 是否延道路自动设置角度在 moveAlong 里设置
+                autoRotation: true,
+            });
+        };
+
+        window.pauseAnimation = function () {
+            marker.pauseMove();
+        };
+
+        window.resumeAnimation = function () {
+            marker.resumeMove();
+        };
+
+        window.stopAnimation = function () {
+            marker.stopMove();
+        };
+    })
+            
+const pathArr = [
+  [
+    [
+      [115.9,39.6],
+      [116.3,39.7],
+      [116.6, 39.8],
+      [116.6,40.1],
+      [117.1, 40.2],
+      [116.8,40.3],
+      [115.9,40.4],
+    ],
+  ],
+];
+var area = AMap.GeometryUtil.ringArea([[115.9,39.6],
+      [116.3,39.7],
+      [116.6, 39.8],
+      [116.6,40.1],
+      [117.1, 40.2],
+      [116.8,40.3],
+      [115.9,40.4]]);
+//text.setText('面积'+area)
+const polygon = new AMap.Polygon({
+  path: pathArr, //多边形路径
+  fillColor: "#ccebc5", //多边形填充颜色
+  strokeOpacity: 1, //线条透明度
+  fillOpacity: 0.5, //填充透明度
+  strokeColor: '#2b8cbe',
+  strokeWeight: 1, //线条宽度
+  strokeStyle: "dashed", //线样式
+  strokeDasharray: [5, 5], //轮廓的虚线和间隙的样式
+});
+map.add(polygon);
+//鼠标移入事件
+polygon.on("mouseover", () => {
+  polygon.setOptions({
+    //修改多边形属性的方法
+    fillOpacity: 0.7, //多边形填充透明度
+    fillColor: "#7bccc4",
+  });
+});
+//鼠标移出事件
+polygon.on("mouseout", () => {
+  polygon.setOptions({
+    fillOpacity: 1,
+    fillColor: "#fff",
+  });
+});
+//设置圆形位置
+var center = new AMap.LngLat(116.433322, 39.900255);
+//设置圆的半径大小
+var radius = 100000;
+//创建圆形 Circle 实例
+var circle = new AMap.Circle({
+  center: center, //圆心
+  radius: radius, //半径
+  borderWeight: 3, //描边的宽度
+  strokeColor: "#FF33FF", //轮廓线颜色
+  strokeOpacity: 1, //轮廓线透明度
+  strokeWeight: 1, //轮廓线宽度
+  fillOpacity: 0.4, //圆形填充透明度
+  strokeStyle: "dashed", //轮廓线样式
+  strokeDasharray: [10, 10],
+  fillColor: "#1791fc", //圆形填充颜色
+  zIndex: 50, //圆形的叠加顺序
+});
+//圆形 Circle 对象添加到 Map
+//map.add(circle);
+//覆盖物1
+var polyline = new AMap.Polyline({
+  path: [
+    new AMap.LngLat("116.368904", "39.913423"),
+    new AMap.LngLat("116.382122", "39.901176"),
+  ],
+});
+//覆盖物2
+var circle = new AMap.Circle({
+  center: new AMap.LngLat("116.407745", "39.917578"), //圆心
+  radius: 50, //半径 单位：米
+});
+
+//创建覆盖物群组，传入覆盖物组成的数组
+var overlayGroup = new AMap.OverlayGroup([polyline, circle]);
+//对此覆盖物群组设置同一属性
+overlayGroup.setOptions({
+  strokeColor: "red",
+  strokeWeight: 5,
+});
+//统一添加到地图实例上
+map.add(overlayGroup);
+//同时也可以对群组进行统一的展示隐藏操作
+//overlayGroup.hide(); //覆盖物隐藏
+overlayGroup.show(); //覆盖物可见
+//多边形 Polygon对象添加到 Map
+//将覆盖物调整到合适视野
+map.setFitView([overlayGroup]);
+</script>
+</body>
+</html>
